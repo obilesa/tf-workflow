@@ -46,7 +46,8 @@ jobs:
     - name: Upload Graph
       id: upload-graph
       run: |
-       echo "IMIGUR_LINK=$(curl -X POST -H 'Authorization: Client-ID be7048e607d5f66' -F 'image=@images.png' https://api.imgur.com/3/image | grep -o '"link":" [^"]*' | awk -F ':"' '{print $2}')" >> $GITHUB_ENV
+        IMGUR_LINK=$(curl -X POST -H "Authorization: Client-ID $IMGUR_CLIENT_ID" -F "image=@images.png" https://api.imgur.com/3/image | grep -o '"link":"[^"]*' | awk -F ':"' '{print $2}')
+        echo "IMGUR_LINK=$IMGUR_LINK" >> $GITHUB_ENV
     - name:
       id: test_env
       run: |
