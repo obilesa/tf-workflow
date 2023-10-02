@@ -47,6 +47,10 @@ jobs:
       id: upload-graph
       run: |
        echo "IMIGUR_LINK=$(curl -X POST -H 'Authorization: Client-ID be7048e607d5f66' -F 'image=@images.png' https://api.imgur.com/3/image | grep -o '"link":" [^"]*' | awk -F ':"' '{print $2}')" >> $GITHUB_ENV
+    - name:
+      id: test_env
+      run: |
+            echo $IMIGUR_LINK
     - name: Comment PR
       uses: thollander/actions-comment-pull-request@v2
       with:
