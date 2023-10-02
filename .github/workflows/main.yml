@@ -56,23 +56,11 @@ jobs:
       id: upload-graph
       run: |
        echo "IMIGUR_LINK=$(curl -X POST -H 'Authorization: Client-ID be7048e607d5f66' -F 'image=@images.png' https://api.imgur.com/3/image | grep -o '"link":" [^"]*' | awk -F ':"' '{print $2}')" >> $GITHUB_ENV
-    - name: Comment on Pull Request
-      uses: actions/github-script@v5
+    - name: Comment PR
+      uses: thollander/actions-comment-pull-request@v2
       with:
-        script: |
-            const github = require('@actions/github');
-            const context = github.context;
-            const octokit = new github.GitHub(process.env.GITHUB_TOKEN);
-            const commentBody = '[test](${{ env.IMIGUR_LINK }})';
-
-            octokit.issues.createComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            issue_number: context.issue.number,
-            body: commentBody,
-            });
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        message: |
+         [graph](${{ env.IMIGUR_LINK }})
     - name: Decrypt file
       run:
          openssl aes-256-cbc -d -in terraform.tfstate.enc -out terraform.tfstate -k ${{ secrets.ENCRYPTION_KEY }}
