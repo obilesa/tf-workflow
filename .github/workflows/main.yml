@@ -43,6 +43,8 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install graphviz
+    - name: Dot veriosn
+      run: dot -V
     - name: Terraform Graph
       id: graph
       run: |
