@@ -45,8 +45,8 @@ jobs:
         sudo apt-get install graphviz
     - name: Terraform Graph
       id: graph
-      run: terraform graph | dot -Tsvg > graph.svg
-      continue-on-error: true
+      run: |
+        terraform graph | dot -Tsvg > graph.svg
     - name: Upload Graph
       id: upload-graph
       run: |
