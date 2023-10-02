@@ -1,1 +1,97 @@
+name: Deploy Infrastructure
 
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  tf_fmt:
+    name: Deploy Site
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+
+    - name: Install Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+            terraform_version: latest
+    - name: Configure AWS CLI
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws-region: us-east-1
+
+    - name: Terraform Init
+      id: init
+      run: terraform init
+
+    - name: Terraform validate
+      id: validate
+      run: terraform validate
+
+    - name: Terraform artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: terraform-plan
+        path: tfplan
+    - name: Download artifact
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        name: terraform-state
+        search_artifacts: true
+      continue-on-error: true
+    - name: Terraform Plan
+      id: plan
+      run: terraform plan -out=tfplan -no-color -input=false
+      continue-on-error: true
+    - name: Terraform Graph
+      id: graph
+      run: terraform graph | dot -Tsvg > graph.svg
+      continue-on-error: true
+    - name: Upload Graph
+      id: upload-graph
+      run: |
+       echo "IMIGUR_LINK=$(curl -X POST -H 'Authorization: Client-ID be7048e607d5f66' -F 'image=@images.png' https://api.imgur.com/3/image | grep -o '"link":" [^"]*' | awk -F ':"' '{print $2}')" >> $GITHUB_ENV
+    - name: Comment on Pull Request
+      uses: actions/github-script@v5
+      with:
+          script: |
+            const github = require('@actions/github');
+            const context = github.context;
+            const octokit = new github.GitHub(process.env.GITHUB_TOKEN);
+            const commentBody = '![graph](' + '${{ env.IMIGUR_LINK }}' + ')';
+
+            octokit.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: commentBody,
+            });
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Decrypt file
+      run:
+         openssl aes-256-cbc -d -in terraform.tfstate.enc -out terraform.tfstate -k ${{ secrets.ENCRYPTION_KEY }}
+      continue-on-error: true
+    - name: Terraform Apply
+      id: apply
+      run: terraform apply -auto-approve 
+      env:
+        AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: List files
+      run: ls -R
+    - name: Encrypt file
+      run:
+         openssl aes-256-cbc -e -in terraform.tfstate -out terraform.tfstate.enc -k ${{ secrets.ENCRYPTION_KEY }}
+    
+    - name: Terraform artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: terraform-state
+        path: ./terraform.tfstate.enc
+    
