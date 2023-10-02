@@ -1,9 +1,12 @@
 name: Deploy Infrastructure
 
 on:
-  push:
-    branches:
-      - main
+    pull_request:
+      types:
+        - opened
+        - synchronize
+        - reopened
+        - closed
 
 jobs:
   tf_fmt:
@@ -32,18 +35,6 @@ jobs:
     - name: Terraform validate
       id: validate
       run: terraform validate
-
-    - name: Terraform artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: terraform-plan
-        path: tfplan
-    - name: Download artifact
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        name: terraform-state
-        search_artifacts: true
-      continue-on-error: true
     - name: Terraform Plan
       id: plan
       run: terraform plan -out=tfplan -no-color -input=false
