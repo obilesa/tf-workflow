@@ -61,25 +61,5 @@ jobs:
       with:
         message: |
          [graph](${{ env.IMIGUR_LINK }})
-    - name: Decrypt file
-      run:
-         openssl aes-256-cbc -d -in terraform.tfstate.enc -out terraform.tfstate -k ${{ secrets.ENCRYPTION_KEY }}
-      continue-on-error: true
-    - name: Terraform Apply
-      id: apply
-      run: terraform apply -auto-approve 
-      env:
-        AWS_ACCESS_KEY_ID:  ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY:  ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    - name: List files
-      run: ls -R
-    - name: Encrypt file
-      run:
-         openssl aes-256-cbc -e -in terraform.tfstate -out terraform.tfstate.enc -k ${{ secrets.ENCRYPTION_KEY }}
-    
-    - name: Terraform artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: terraform-state
-        path: ./terraform.tfstate.enc
+
     
