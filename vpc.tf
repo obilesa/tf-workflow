@@ -1,14 +1,14 @@
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
-  name = local.config.variables.vpc_name.value
+  name = "eks-vpc"
   azs  = ["us-east-1a", "us-east-1b"]
   cidr = "10.0.0.0/16"
 
   instance_tenancy = "default"
 
-  private_subnets      = local.config.variables.vpc_private_subnets.value
-  public_subnets       = local.config.variables.vpc_public_subnets.value
+  private_subnets      = ["10.0.1.0/24", "10.0.2.0/24"]
+  public_subnets       = ["10.0.3.0/24", "10.0.4.0/24" ]
 
   enable_nat_gateway = true
   single_nat_gateway = true
@@ -30,8 +30,6 @@ module "vpc" {
   private_subnet_tags = {
     "kubernetes.io/cluster/eks-cluster" = "shared"
     "kubernetes.io/role/internal-elb"             = "1"
-    "karpenter.sh/discovery" = "eks-cluster"
   }
 }
-
 
