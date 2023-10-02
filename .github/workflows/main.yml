@@ -59,17 +59,17 @@ jobs:
     - name: Comment on Pull Request
       uses: actions/github-script@v5
       with:
-          script: |
+        script: |
             const github = require('@actions/github');
             const context = github.context;
             const octokit = new github.GitHub(process.env.GITHUB_TOKEN);
-            const commentBody = '![graph](' + '${{ env.IMIGUR_LINK }}' + ')';
+            const commentBody = '[test](${{ env.IMIGUR_LINK }})';
 
             octokit.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: commentBody,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: commentBody,
             });
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
