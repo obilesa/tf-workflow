@@ -51,11 +51,11 @@ jobs:
     - name:
       id: test_env
       run: |
-            echo $IMIGUR_LINK
+            echo $IMGUR_LINK
     - name: Comment PR
       uses: thollander/actions-comment-pull-request@v2
       with:
         message: |
-         [graph](${{ env.IMIGUR_LINK }})
+         [graph](${{ env.IMGUR_LINK }})
 
     
