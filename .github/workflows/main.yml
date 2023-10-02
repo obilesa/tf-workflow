@@ -39,6 +39,10 @@ jobs:
       id: plan
       run: terraform plan -out=tfplan -no-color -input=false
       continue-on-error: true
+    - name: Install Graphviz
+      run: |
+        sudo apt-get update
+        sudo apt-get install graphviz
     - name: Terraform Graph
       id: graph
       run: terraform graph | dot -Tsvg > graph.svg
