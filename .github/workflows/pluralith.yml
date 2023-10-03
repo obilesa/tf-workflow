@@ -1,0 +1,20 @@
+#  _
+# |_)|    _ _ |._|_|_
+# |  ||_|| (_||| | | |
+#
+# Welcome to Pluralith!
+# https://www.pluralith.com
+#
+# This is your Pluralith config file
+# Learn more about it at https://docs.pluralith.com/docs/more/config
+
+org_id: 212455467
+project_id: "magic-experiment-away-speed-door"
+project_name: "IndustrialTeamProject"
+
+config: # OPTIONAL - Various configurations for Terraform and Infracost under the hood
+  title: "Deployment Diagram" # Title to be shown in the exported diagram PDF
+  version: "" # Version to be shown in the exported diagram PDF
+  sync_to_backend: false # Specify whether to store a diagram as PDF in your state backend alongside your Terraform state
+  
+

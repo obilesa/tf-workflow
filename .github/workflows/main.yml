@@ -8,6 +8,11 @@ on:
         - reopened
         - closed
 
+
+env:
+    working-directory: "terraform"
+
+    
 jobs:
   tf_fmt:
     name: Deploy Site
@@ -16,22 +21,46 @@ jobs:
 
     - name: Checkout Repo
       uses: actions/checkout@v3
-
+      
+    - name: Configure AWS CLI
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+              aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+              aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+              aws-region: us-east-1
     - name: Install Terraform
       uses: hashicorp/setup-terraform@v1
       with:
             terraform_version: latest
-    - name: Configure AWS CLI
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-            aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: us-east-1
+            terraform_wrapper: false # This is recommended so the `terraform show` command outputs valid JSON
 
     - name: Terraform Init
       id: init
       run: terraform init
+    - name: Pluralith Init
+      uses: Pluralith/actions/init@v1.4.0
+      with:
+        api-key: ${{ secrets.PLURALITH_API_KEY }}
+        terraform-path: "${{ env.working-directory }}/application"
 
+# Run Pluralith to generate an infrastructure diagram and comment body
+    - name: Pluralith Run
+      uses: Pluralith/actions/run@v1.4.0
+      with:
+        terraform-command: "plan"
+        terraform-path: "${{ env.working-directory }}/application"
+        show-changes: true
+        show-drift: true
+    
+    # Post the generated diagram as a GitHub comment
+    - name: Pluralith Comment
+      uses: Pluralith/actions/comment@v1.4.0
+      with:
+        terraform-path: "${{ env.working-directory }}/application"
+    
+    
+    
+  
     - name: Terraform validate
       id: validate
       run: terraform validate
@@ -39,25 +68,5 @@ jobs:
       id: plan
       run: terraform plan -out=tfplan -no-color -input=false
       continue-on-error: true
-    - name: Install Graphviz
-      run: |
-        sudo apt-get update
-        sudo apt-get install graphviz
-    - name: Dot veriosn
-      run: dot -V
-    - name: Terraform Graph
-      id: graph
-      run: |
-        terraform graph | dot -Tsvg > graph.svg
-    - name: Upload Graph
-      id: upload-graph
-      run: |
-        IMGUR_LINK=$(curl -X POST -H "Authorization: Client-ID $IMGUR_CLIENT_ID" -F "image=@graph.svg" https://api.imgur.com/3/image | grep -o '"link":"[^"]*' | awk -F ':"' '{print $2}')
-        echo "::set-output name=IMGUR_LINK::$IMGUR_LINK"
-      shell: bash
-    - name: Comment PR
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        message: |
-            [graph](${{ steps.upload-graph.outputs.IMGUR_LINK }})
+    
     
