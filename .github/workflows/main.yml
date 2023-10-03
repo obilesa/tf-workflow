@@ -37,7 +37,6 @@ jobs:
         terraform_wrapper: false # This is recommended so the `terraform show` command outputs valid JSON
     - name: Terraform Init
       run: terraform init
-      working-directory: path/to/terraform/root
 
     # Set up and initialize Pluralith
     - name: Pluralith Init
