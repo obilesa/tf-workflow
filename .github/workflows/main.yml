@@ -55,7 +55,10 @@ jobs:
         show-drift: true
 
     # Post the generated diagram as a GitHub comment
-    - name: Pluralith Comment
-      uses: Pluralith/actions/comment@v1.4.0
+    - name: Post Pluralith comment
+      id: compost-comment
+      uses: infracost/compost-action@master
       with:
-        terraform-path: "${{ env.working-directory }}"
+        body-file: "comment.md"
+        behavior: "new"
+        github-token: ${{ secrets.GITHUB_TOKEN }}
