@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
         working-directory: "terraform"
+    permissions:
+        pull-requests: write
     steps:
 
     - name: Checkout Repo
