@@ -17,11 +17,12 @@ jobs:
     name: Deploy Site
     runs-on: ubuntu-latest
     env:
-        working-directory: .
+        working-directory: "terraform"
     steps:
 
     - name: Checkout Repo
       uses: actions/checkout@v3
+            
 
       
     - name: Configure AWS CLI
@@ -53,13 +54,10 @@ jobs:
         terraform-path: "${{ env.working-directory }}"
         show-changes: true
         show-drift: true
+
+    - name: Pluralith Comment
+      uses: Pluralith/actions/comment@v1.4.0
+      with:
+          terraform-path: "${{ env.working-directory }}"
     
 
-    # show files in root
-    - name: Show files in root
-      run: ls -a
-    # Post the generated diagram as a GitHub comment
-    - name: Comment PR
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        filePath: comment.md
