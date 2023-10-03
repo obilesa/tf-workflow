@@ -16,6 +16,9 @@ jobs:
   tf_fmt:
     name: Deploy Site
     runs-on: ubuntu-latest
+    permissions:
+        contents: read
+        pull-requests: write
     env:
         working-directory: "terraform"
     steps:
@@ -60,11 +63,11 @@ jobs:
     - name: Show files in root
       run: ls -R
     - name:
-      run: cat terraform/comment.md > terraform/comment2.md
+      run: cat terraform/comment.md 
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     # Post the generated diagram as a GitHub comment
     - name: Comment PR
       uses: thollander/actions-comment-pull-request@v2
       with:
-        filePath: terraform/comment2.md
+        filePath: terraform/comment.md
