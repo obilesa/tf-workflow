@@ -38,6 +38,7 @@ jobs:
         terraform_wrapper: false # This is recommended so the `terraform show` command outputs valid JSON
     - name: Terraform Init
       run: terraform init
+      working-directory: "${{ env.working-directory }}"
 
     # Set up and initialize Pluralith
     - name: Pluralith Init
