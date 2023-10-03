@@ -17,12 +17,11 @@ jobs:
     name: Deploy Site
     runs-on: ubuntu-latest
     env:
-        working-directory: "terraform"
+        working-directory: .
     steps:
 
     - name: Checkout Repo
       uses: actions/checkout@v3
-            
 
       
     - name: Configure AWS CLI
@@ -38,7 +37,7 @@ jobs:
         terraform_wrapper: false # This is recommended so the `terraform show` command outputs valid JSON
     - name: Terraform Init
       run: terraform init
-      working-directory: "${{ env.working-directory }}"
+      working-directory: ${{ env.working-directory }}
 
     # Set up and initialize Pluralith
     - name: Pluralith Init
@@ -55,10 +54,13 @@ jobs:
         terraform-path: "${{ env.working-directory }}"
         show-changes: true
         show-drift: true
-
-    - name: Pluralith Comment
-      uses: Pluralith/actions/comment@v1.4.0
-      with:
-          terraform-path: "${{ env.working-directory }}"
     
 
+    # show files in root
+    - name: Show files in root
+      run: ls -a
+    # Post the generated diagram as a GitHub comment
+    - name: Comment PR
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: terraform/comment.md
