@@ -20,7 +20,7 @@ jobs:
         contents: read
         pull-requests: write
     env:
-        working-directory: "terraform"
+        working-directory: .
     steps:
 
     - name: Checkout Repo
@@ -40,7 +40,6 @@ jobs:
         terraform_wrapper: false # This is recommended so the `terraform show` command outputs valid JSON
     - name: Terraform Init
       run: terraform init
-      working-directory: ${{ env.working-directory }}
 
     # Set up and initialize Pluralith
     - name: Pluralith Init
@@ -70,4 +69,4 @@ jobs:
     - name: Comment PR
       uses: thollander/actions-comment-pull-request@v2
       with:
-        filePath: terraform/comment.md
+        filePath: comment.md
