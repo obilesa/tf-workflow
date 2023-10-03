@@ -12,7 +12,7 @@ on:
 env:
     working-directory: "terraform"
 
-    
+
 jobs:
   tf_fmt:
     name: Deploy Site
@@ -37,6 +37,7 @@ jobs:
     - name: Terraform Init
       id: init
       run: terraform init
+      working-directory: path/to/terraform/root
     - name: Pluralith Init
       uses: Pluralith/actions/init@v1.4.0
       with:
