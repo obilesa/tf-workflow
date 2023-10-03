@@ -59,6 +59,8 @@ jobs:
     # show files in root
     - name: Show files in root
       run: ls -R
+    - name:
+      run: cat terraform/comment.md
     # Post the generated diagram as a GitHub comment
     - name: Comment PR
       uses: thollander/actions-comment-pull-request@v2
