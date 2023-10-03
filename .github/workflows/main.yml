@@ -53,12 +53,16 @@ jobs:
         terraform-path: "${{ env.working-directory }}"
         show-changes: true
         show-drift: true
+    
 
+    # show files in root
+    - name: Show files in root
+      run: ls -a
     # Post the generated diagram as a GitHub comment
     - name: Post Pluralith comment
       id: compost-comment
       uses: infracost/compost-action@master
       with:
         body-file: "comment.md"
-        behavior: "new"
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        behavior: "update"
+        github-token: ${{ github.token }}
