@@ -17,7 +17,7 @@ jobs:
     name: Deploy Site
     runs-on: ubuntu-latest
     env:
-        working-directory: .
+        working-directory: "terraform"
     steps:
 
     - name: Checkout Repo
@@ -58,7 +58,7 @@ jobs:
 
     # show files in root
     - name: Show files in root
-      run: ls -R
+      run: ls -Ra
     # Post the generated diagram as a GitHub comment
     - name: Comment PR
       uses: thollander/actions-comment-pull-request@v2
