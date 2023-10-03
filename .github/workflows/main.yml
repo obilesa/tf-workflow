@@ -59,10 +59,7 @@ jobs:
     - name: Show files in root
       run: ls -a
     # Post the generated diagram as a GitHub comment
-    - name: Post Pluralith comment
-      id: compost-comment
-      uses: infracost/compost-action@master
+    - name: Comment PR
+      uses: thollander/actions-comment-pull-request@v2
       with:
-        body-file: "comment.md"
-        behavior: "update"
-        github-token: ${{ github.token }}
+        filePath: comment.md
