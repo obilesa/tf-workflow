@@ -9,14 +9,15 @@ on:
         - closed
 
 
-env:
-    working-directory: "terraform"
+
 
 
 jobs:
   tf_fmt:
     name: Deploy Site
     runs-on: ubuntu-latest
+    env:
+        working-directory: terraform
     steps:
 
     - name: Checkout Repo
@@ -28,21 +29,21 @@ jobs:
               aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
               aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
               aws-region: us-east-1
-    - name: Install Terraform
+    # Set up Terraform
+    - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
       with:
-            terraform_version: latest
-            terraform_wrapper: false # This is recommended so the `terraform show` command outputs valid JSON
-
+        terraform_wrapper: false # This is recommended so the `terraform show` command outputs valid JSON
     - name: Terraform Init
-      id: init
       run: terraform init
       working-directory: path/to/terraform/root
+
+    # Set up and initialize Pluralith
     - name: Pluralith Init
       uses: Pluralith/actions/init@v1.4.0
       with:
-        api-key: ${{ secrets.PLURALITH_API_KEY }}
         terraform-path: "${{ env.working-directory }}/application"
+        api-key: ${{ secrets.PLURALITH_API_KEY }}
 
 # Run Pluralith to generate an infrastructure diagram and comment body
     - name: Pluralith Run
@@ -52,22 +53,9 @@ jobs:
         terraform-path: "${{ env.working-directory }}/application"
         show-changes: true
         show-drift: true
-    
+
     # Post the generated diagram as a GitHub comment
     - name: Pluralith Comment
       uses: Pluralith/actions/comment@v1.4.0
       with:
         terraform-path: "${{ env.working-directory }}/application"
-    
-    
-    
-  
-    - name: Terraform validate
-      id: validate
-      run: terraform validate
-    - name: Terraform Plan
-      id: plan
-      run: terraform plan -out=tfplan -no-color -input=false
-      continue-on-error: true
-    
-    
