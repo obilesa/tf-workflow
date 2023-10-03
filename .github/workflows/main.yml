@@ -63,4 +63,5 @@ jobs:
     - name: Comment PR
       uses: thollander/actions-comment-pull-request@v2
       with:
-        filePath: ./terraform/comment.md
+        filePath: terraform/comment.md
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
