@@ -1,6 +1,3 @@
-
-# based on this tutorial
-# https://andrewtarry.com/posts/terraform-eks-alb-setup-updated/
 module "lb_role" {
   source    = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
 
@@ -42,7 +39,7 @@ resource "helm_release" "lb" {
 
   set {
     name  = "region"
-    value = "us-east-1"
+    value = var.region
   }
 
   set {

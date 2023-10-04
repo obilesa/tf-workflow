@@ -10,7 +10,7 @@ resource "kubernetes_deployment" "wordpress" {
   }
 
   spec {
-    replicas = 7
+    replicas = 1
     selector {
       match_labels = {
         app = "wordpress"

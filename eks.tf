@@ -1,7 +1,7 @@
 module "eks" {
   source          = "terraform-aws-modules/eks/aws"
   version         = "19.16.0"
-  cluster_name    = "eks-cluster"
+  cluster_name    = var.cluster_name
   cluster_version = "1.27"
   
 
@@ -9,24 +9,6 @@ module "eks" {
   subnet_ids = module.vpc.private_subnets
   cluster_endpoint_private_access = true
   cluster_endpoint_public_access  = true
-
-
-  eks_managed_node_group_defaults = {
-
-    instance_types = ["t2.micro"]
-
-    managed_test = {
-      min_size     = 1
-      desired_size = 1
-      max_size     = 3
-
-      # SPOT: spare capacity of unused EC2 instances at steep discounts
-      # ON_DEMAND: pay for compute capacity by the second with no long-term commitments
-      capacity_type = "SPOT"
-
-    }
-  }
-
 
   eks_managed_node_groups = {
     default_node_group = {
@@ -41,7 +23,7 @@ module "eks" {
 
       # Set the security groups for the worker nodes
 
-      capacity_type = "SPOT"
+      capacity_type = variable.node_group_capacity_type
 
     }
     

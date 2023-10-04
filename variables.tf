@@ -46,6 +46,18 @@ variable "vpc_public_subnets" {
     # input-type = "text"
 }
 
+variable "vpc_cidr" {
+    type = string
+    description = "CIDR block for the VPC"
+    default = "10.0.0.0/16"
+}
+
+variable "vpc_azs" {
+  type = list(string)
+  description = "Availability zones for the VPC"
+  default = ["us-east-1a", "us-east-1b"]
+}
+
 variable "node_group_instance_types" {
     type = list(string)
     description = "Instance types that will be used in the default node group"
@@ -76,4 +88,53 @@ variable "node_group_maximum_instances" {
   default = 3
   # category = "EKS"
   # input-type = "number"
+}
+
+variable "node_group_capacity_type" {
+  type = string
+  description = "Instance types that will be used in the default node group"
+  default = "SPOT"
+}
+
+variable "enable_monitoring" {
+  type = bool
+  description = "Enable/disable cluster monitoring"
+  default = true
+}
+
+
+variable "enable_node_monitoring" {
+  type = bool
+  description = "Enable/disable node monitoring (monitoring needs to be enabled for this to work)"
+  default = true
+}
+
+variable "enable_kube_state_metrics" {
+  type = bool
+  description = "Enable/diable kube state metrics monitoring data collection (monitoring needs to be enabled for this to work)"
+  default = true
+}
+
+variable "enable_cadvisor_metrics"{
+  type = bool
+  description = "Enable/disable cadvisor metrics collection (monitoring needs to be enabled for this to work)"
+  default = true
+}
+
+variable "monitoring_namespace" {
+  type = bool
+  description = "Namespace where monitoring tools will be deployed"
+  default = "monitoring"
+}
+
+variable "enable_karpenter" {
+  type = bool
+  description = "Enable/disable karpenter"
+  default = true
+}
+
+variable "karpenter_namespace" {
+  type = bool
+  description = "Namespace where karpenter will be deployed"
+  default = "karpenter"
 }

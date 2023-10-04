@@ -1,4 +1,5 @@
 module "karpenter" {
+  count = var.enable_karpenter ? 1 : 0
     source = "terraform-aws-modules/eks/aws//modules/karpenter"
 
     cluster_name = module.eks.cluster_name
@@ -10,6 +11,7 @@ module "karpenter" {
 }
 
 resource "helm_release" "karpenter" {
+  count = var.enable_karpenter ? 1 : 0
   namespace        = "karpenter"
   create_namespace = true
   /*
@@ -60,6 +62,7 @@ data "aws_ecrpublic_authorization_token" "token" {
 }
 
 resource "kubectl_manifest" "karpenter_provisioner" {
+  count = var.enable_karpenter ? 1 : 0
   yaml_body = <<-YAML
     apiVersion: karpenter.sh/v1alpha5
     kind: Provisioner
@@ -90,6 +93,7 @@ resource "kubectl_manifest" "karpenter_provisioner" {
 
 
 resource "kubectl_manifest" "karpenter_node_template" {
+  count = var.enable_karpenter ? 1 : 0
   yaml_body = <<-YAML
     apiVersion: karpenter.k8s.aws/v1alpha1
     kind: AWSNodeTemplate
