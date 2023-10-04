@@ -7,11 +7,6 @@ on:
         - synchronize
         - reopened
         - closed
-
-
-
-
-
 jobs:
   tf_fmt:
     name: Deploy Site
@@ -61,3 +56,6 @@ jobs:
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: comment.md
+
+
+    
