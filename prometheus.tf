@@ -211,9 +211,9 @@ resource "kubernetes_ingress_v1" "prometheus" {
           path = "/*"
           backend {
             service {
-              name = kubernetes_service.prometheus.metadata[0].name
+              name = "prometheus-lb"
               port {
-                number = kubernetes_service.prometheus.spec[0].port[0].port
+                number = 9090
               }
             }
           }
