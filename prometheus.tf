@@ -484,3 +484,83 @@ resource "kubernetes_cluster_role_binding" "kube_state_metrics" {
   }
 }
 
+
+resource "kubernetes_deployment" "kube_state_metrics" {
+    count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
+  metadata {
+    name = "kube-state-metrics"
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+    labels = {
+      "app.kubernetes.io/component" = "exporter",
+      "app.kubernetes.io/name" = "kube-state-metrics",
+      "app.kubernetes.io/version" = "2.10.0",
+      "prometheus.io/cluster" = "true"
+    }
+  }
+  spec {
+    selector {
+      match_labels = {
+        "app.kubernetes.io/name" = "kube-state-metrics"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          "app.kubernetes.io/component" = "exporter",
+          "app.kubernetes.io/name" = "kube-state-metrics",
+          "app.kubernetes.io/version" = "2.10.0",
+          "prometheus.io/cluster" = "true"
+        }
+      }
+      spec {
+        node_selector = {
+          "kubernetes.io/os" = "linux"
+
+        }
+        service_account_name = kubernetes_service_account.kube_state_metrics[0].metadata[0].name
+        container {
+          image = "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.0"
+          liveness_probe {
+            http_get {
+              path = "/healthz"
+              port = 8080
+            }
+            initial_delay_seconds = 5
+            timeout_seconds = 5
+          }
+          name = "kube-state-metrics"
+          port {
+            container_port = 8080
+            name = "http-metrics"
+          }
+
+          port {
+            container_port = 8081
+            name = "telemetry"
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/"
+              port = 8081
+            }
+            initial_delay_seconds = 5
+            timeout_seconds = 5
+          }
+
+          security_context {
+            allow_privilege_escalation = false
+            capabilities {
+              drop = ["all"]
+            }
+            read_only_root_filesystem = true
+            run_as_non_root = true
+            run_as_user = 65534
+          }
+        }
+      }
+    }
+    
+  } 
+}
