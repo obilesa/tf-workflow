@@ -489,7 +489,7 @@ resource "kubernetes_deployment" "kube_state_metrics" {
     count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
   metadata {
     name = "kube-state-metrics"
-    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+
     labels = {
       "app.kubernetes.io/component" = "exporter",
       "app.kubernetes.io/name" = "kube-state-metrics",
@@ -528,15 +528,7 @@ resource "kubernetes_deployment" "kube_state_metrics" {
             name = "telemetry"
           }
 
-          security_context {
-            allow_privilege_escalation = false
-            capabilities {
-              drop = ["all"]
-            }
-            read_only_root_filesystem = true
-            run_as_non_root = true
-            run_as_user = 65534
-          }
+
         }
       }
     }
@@ -544,32 +536,3 @@ resource "kubernetes_deployment" "kube_state_metrics" {
   } 
 }
 
-resource "kubernetes_service" "kube_state_metrics" {
-    count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
-    metadata {
-      name = "kube-state-metrics"
-      labels = {
-        "app.kubernetes.io/component" = "exporter",
-        "app.kubernetes.io/name" = "kube-state-metrics",
-        "app.kubernetes.io/version" = "2.10.0",
-      }
-    }
-
-    spec {
-      cluster_ip = "None"
-      port {
-        name = "http-metrics"
-        port = 8080
-        target_port = 8080
-      }
-
-      port {
-        name = "telemetry"
-        port = 8081
-        target_port = 8081
-      }
-  selector = {
-    "app.kubernetes.io/name" = "kube-state-metrics"
-  }   
-}
-}
