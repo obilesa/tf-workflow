@@ -514,21 +514,9 @@ resource "kubernetes_deployment" "kube_state_metrics" {
         }
       }
       spec {
-        node_selector = {
-          "kubernetes.io/os" = "linux"
-
-        }
         service_account_name = kubernetes_service_account.kube_state_metrics[0].metadata[0].name
         container {
           image = "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.0"
-          liveness_probe {
-            http_get {
-              path = "/healthz"
-              port = 8080
-            }
-            initial_delay_seconds = 5
-            timeout_seconds = 5
-          }
           name = "kube-state-metrics"
           port {
             container_port = 8080
@@ -538,15 +526,6 @@ resource "kubernetes_deployment" "kube_state_metrics" {
           port {
             container_port = 8081
             name = "telemetry"
-          }
-
-          readiness_probe {
-            http_get {
-              path = "/"
-              port = 8081
-            }
-            initial_delay_seconds = 5
-            timeout_seconds = 5
           }
 
           security_context {
@@ -563,4 +542,35 @@ resource "kubernetes_deployment" "kube_state_metrics" {
     }
     
   } 
+}
+
+resource "kubernetes_service" "kube_state_metrics" {
+    count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
+    metadata {
+      name = "kube-state-metrics"
+      namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+      labels = {
+        "app.kubernetes.io/component" = "exporter",
+        "app.kubernetes.io/name" = "kube-state-metrics",
+        "app.kubernetes.io/version" = "2.10.0",
+      }
+    }
+
+    spec {
+      cluster_ip = "None"
+      port {
+        name = "http-metrics"
+        port = 8080
+        target_port = 8080
+      }
+
+      port {
+        name = "telemetry"
+        port = 8081
+        target_port = 8081
+      }
+  selector = {
+    "app.kubernetes.io/name" = "kube-state-metrics"
+  }   
+}
 }
