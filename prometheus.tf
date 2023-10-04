@@ -165,6 +165,26 @@ resource "kubernetes_deployment" "prometheus" {
 }
 
 
+resource "kubernetes_service" "prometheus" {
+    metadata {
+        name = "prometheus-lb"
+        namespace = "monitoring"
+    }
+    
+    spec {
+        selector = {
+        app = kubernetes_deployment.prometheus.spec[0].template[0].metadata[0].labels.app
+        }
+    
+        port {
+        port        = 9090
+        target_port = 9090
+        }
+    
+        type = "NodePort"
+    }
+}
+
 
 
 
