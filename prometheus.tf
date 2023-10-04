@@ -200,7 +200,6 @@ resource "kubernetes_ingress_v1" "prometheus" {
     labels = {
       app = "prometheus"
     }
-    namespace = "default"
 
     annotations = {
       "alb.ingress.kubernetes.io/scheme" = "internet-facing"
