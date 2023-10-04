@@ -188,11 +188,11 @@ resource "kubernetes_service" "prometheus" {
 
 resource "kubernetes_ingress_v1" "prometheus" {
   metadata {
-    name = "prometheus"
+    name = "prometheus-ingress"
     labels = {
-      app = "prometheus"
+      app = "prometheus-ingress"
     }
-    namespace = kubernetes_namespace.prometheus.metadata[0].name
+    namespace = "monitoring"
 
     annotations = {
       "alb.ingress.kubernetes.io/scheme" = "internet-facing"
