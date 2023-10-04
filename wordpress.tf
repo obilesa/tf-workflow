@@ -1,3 +1,4 @@
+/*
 resource "kubernetes_deployment" "wordpress" {
 
 
@@ -10,7 +11,7 @@ resource "kubernetes_deployment" "wordpress" {
   }
 
   spec {
-    replicas = 1
+    replicas = 7
     selector {
       match_labels = {
         app = "wordpress"
@@ -117,3 +118,5 @@ resource "kubernetes_ingress_v1" "wordpress" {
     }
   }
 }
+
+*/

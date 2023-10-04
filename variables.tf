@@ -122,7 +122,7 @@ variable "enable_cadvisor_metrics"{
 }
 
 variable "monitoring_namespace" {
-  type = bool
+  type = string
   description = "Namespace where monitoring tools will be deployed"
   default = "monitoring"
 }
@@ -134,7 +134,7 @@ variable "enable_karpenter" {
 }
 
 variable "karpenter_namespace" {
-  type = bool
+  type = string
   description = "Namespace where karpenter will be deployed"
   default = "karpenter"
 }

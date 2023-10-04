@@ -1,4 +1,3 @@
-
 resource "aws_security_group" "secgrp-rds" {
 
   name        = "secgrp-rds"

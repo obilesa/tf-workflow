@@ -12,7 +12,7 @@ module "karpenter" {
 
 resource "helm_release" "karpenter" {
   count = var.enable_karpenter ? 1 : 0
-  namespace        = "karpenter"
+  namespace        = var.karpenter_namespace
   create_namespace = true
   /*
   v0.16.0 changed the default replicas from 1 to 2.
@@ -43,16 +43,16 @@ To do so on AWS increase the minimum and desired parameters on the node group au
 
     set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.karpenter.irsa_arn
+    value = module.karpenter[0].irsa_arn
   }
  set {
     name  = "settings.aws.defaultInstanceProfile"
-    value = module.karpenter.instance_profile_name
+    value = module.karpenter[0].instance_profile_name
   }
 
     set {
     name  = "settings.aws.interruptionQueueName"
-    value = module.karpenter.queue_name
+    value = module.karpenter[0].queue_name
   }
 
 }

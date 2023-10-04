@@ -60,13 +60,13 @@ resource "kubernetes_cluster_role_binding" "prometheus_discoverer" {
   role_ref {
     api_group = "rbac.authorization.k8s.io"
     kind     = "ClusterRole"
-    name     = kubernetes_cluster_role.prometheus.metadata[0].name
+    name     = kubernetes_cluster_role.prometheus[0].metadata[0].name
   }
 
   subject {
     kind = "ServiceAccount"
-    name = kubernetes_service_account.prometheus.metadata[0].name
-    namespace = kubernetes_namespace.prometheus.metadata[0].name
+    name = kubernetes_service_account.prometheus[0].metadata[0].name
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
   }
 }
 # reads the prometheus.yaml file and store it in the config map
@@ -78,7 +78,7 @@ resource "kubernetes_config_map" "prometheus-config"{
    ]
     metadata {
         name = "prometheus-config"
-        namespace = kubernetes_namespace.prometheus.metadata[0].name
+        namespace = kubernetes_namespace.prometheus[0].metadata[0].name
     }
 
     # reads local config file
@@ -94,7 +94,7 @@ resource "kubernetes_service_account" "prometheus" {
    ]
   metadata {
     name = "prometheus"
-    namespace = kubernetes_namespace.prometheus.metadata[0].name
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
   }
 }
 
@@ -114,7 +114,7 @@ resource "kubernetes_deployment" "prometheus" {
     labels = {
       app = "prometheus"
     }
-    namespace = kubernetes_namespace.prometheus.metadata[0].name
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
   }
 
   spec {
@@ -132,7 +132,7 @@ resource "kubernetes_deployment" "prometheus" {
       }
 
       spec {
-        service_account_name = kubernetes_service_account.prometheus.metadata[0].name
+        service_account_name = kubernetes_service_account.prometheus[0].metadata[0].name
         automount_service_account_token = true
         container {
           name = "prometheus"
@@ -157,7 +157,7 @@ resource "kubernetes_deployment" "prometheus" {
         volume {
           name = "config"
           config_map {
-            name = kubernetes_config_map.prometheus-config.metadata[0].name
+            name = kubernetes_config_map.prometheus-config[0].metadata[0].name
           }
         }
 
@@ -175,12 +175,12 @@ resource "kubernetes_service" "prometheus" {
     count = var.enable_monitoring ? 1 : 0
     metadata {
         name = "prometheus-lb"
-        namespace = kubernetes_namespace.prometheus.metadata[0].name
+        namespace = kubernetes_namespace.prometheus[0].metadata[0].name
     }
     
     spec {
         selector = {
-        app = kubernetes_deployment.prometheus.spec[0].template[0].metadata[0].labels.app
+        app = "prometheus"
         }
     
         port {
@@ -218,14 +218,556 @@ resource "kubernetes_ingress_v1" "prometheus" {
           path = "/*"
           backend {
             service {
-              name = kubernetes_service.prometheus.metadata[0].name
+              name = kubernetes_service.prometheus[0].metadata[0].name
               port {
-                number = kubernetes_service.prometheus.spec[0].port[0].port
+                number = kubernetes_service.prometheus[0].spec[0].port[0].port
               }
             }
           }
         }
       }
+    }
+  }
+}
+
+
+
+# Create a Kubernetes DaemonSet for the node exporter
+resource "kubernetes_daemonset" "node_exporter" {
+    count = var.enable_monitoring && var.enable_node_monitoring ? 1 : 0
+  metadata {
+    name = "node-exporter"
+    labels = {
+      app = "node-exporter"
+    }
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+  }
+
+  spec {
+    selector {
+      match_labels = {
+        app = "node-exporter"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app = "node-exporter"
+          "prometheus.io/scrape" = "true"
+        }
+      }
+
+      spec {
+        container {
+          name = "node-exporter"
+          image = "prom/node-exporter:v1.2.2"
+          args = [
+            "--web.listen-address=:9100",
+            "--path.procfs=/host/proc",
+            "--path.sysfs=/host/sys",
+            "--collector.filesystem.ignored-mount-points=^/(dev|proc|sys|run|var/lib/docker/.+)($|/)",
+          ]
+          port {
+            container_port = 9100
+          }
+          volume_mount {
+            name = "proc"
+            mount_path = "/host/proc"
+            read_only = true
+          }
+          volume_mount {
+            name = "sys"
+            mount_path = "/host/sys"
+            read_only = true
+          }
+        }
+
+        volume {
+          name = "proc"
+          host_path {
+            path = "/proc"
+          }
+        }
+        volume {
+          name = "sys"
+          host_path {
+            path = "/sys"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+# Expose the node exporter metrics endpoint using a Kubernetes service
+resource "kubernetes_service" "node_exporter" {
+    count = var.enable_monitoring && var.enable_node_monitoring ? 1 : 0
+  metadata {
+    name = "node-exporter"
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+    annotations = {
+      
+    }
+  }
+
+  spec {
+    selector = {
+      app = "node-exporter"
+    }
+
+    port {
+      name = "metrics"
+      port = 9100
+      target_port = 9100
+    }
+  }
+}
+
+
+
+
+# Would provide metrics about the cluster itself 
+# Can't be tested in AWS Lab
+
+resource "kubernetes_service_account" "kube_state_metrics" {
+    count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
+  depends_on = [ 
+    kubernetes_namespace.prometheus
+   ]
+
+  metadata {
+    name = "kube-state-metrics"
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+  }
+}
+
+resource "kubernetes_cluster_role" "kube_state_metrics" {
+    count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
+  metadata {
+    name = "kube-state-metrics"
+    labels = {
+      "app.kubernetes.io/component" = "exporter"
+      "app.kubernetes.io/name" = "kube-state-metrics"
+      "app.kubernetes.io/version" = "2.10.0"
+    }
+  }
+
+  rule {
+    api_groups = [""]
+    resources = [
+      "configmaps",
+      "secrets",
+      "nodes",
+      "pods",
+      "services",
+      "serviceaccounts",
+      "resourcequotas",
+      "replicationcontrollers",
+      "limitranges",
+      "persistentvolumeclaims",
+      "persistentvolumes",
+      "namespaces",
+      "endpoints",
+    ]
+    verbs = ["list", "watch"]
+  }
+    rule {
+    api_groups = ["apps"]
+    resources = [
+      "statefulsets",
+      "daemonsets",
+      "deployments",
+      "replicasets",
+    ]
+    verbs = ["list", "watch"]
+  }
+
+  rule {
+    api_groups = ["batch"]
+    resources = ["cronjobs", "jobs"]
+    verbs = ["list", "watch"]
+  }
+
+  rule {
+    api_groups = ["autoscaling"]
+    resources = ["horizontalpodautoscalers"]
+    verbs = ["list", "watch"]
+  }
+
+  rule {
+    api_groups = ["authentication.k8s.io"]
+    resources = ["tokenreviews"]
+    verbs = ["create"]
+  }
+   rule {
+    api_groups = ["authorization.k8s.io"]
+    resources = ["subjectaccessreviews"]
+    verbs = ["create"]
+  }
+
+  rule {
+    api_groups = ["policy"]
+    resources = ["poddisruptionbudgets"]
+    verbs = ["list", "watch"]
+  }
+
+  rule {
+    api_groups = ["certificates.k8s.io"]
+    resources = ["certificatesigningrequests"]
+    verbs = ["list", "watch"]
+  }
+
+  rule {
+    api_groups = ["discovery.k8s.io"]
+    resources = ["endpointslices"]
+    verbs = ["list", "watch"]
+  }
+
+  rule {
+    api_groups = ["storage.k8s.io"]
+    resources = ["storageclasses", "volumeattachments"]
+    verbs = ["list", "watch"]
+  }
+    rule {
+    api_groups = ["admissionregistration.k8s.io"]
+    resources = [
+      "mutatingwebhookconfigurations",
+      "validatingwebhookconfigurations",
+    ]
+    verbs = ["list", "watch"]
+  }
+
+  rule {
+    api_groups = ["networking.k8s.io"]
+    resources = ["networkpolicies", "ingressclasses", "ingresses"]
+    verbs = ["list", "watch"]
+  }
+
+  rule {
+    api_groups = ["coordination.k8s.io"]
+    resources = ["leases"]
+    verbs = ["list", "watch"]
+  }
+  rule {
+    api_groups = ["rbac.authorization.k8s.io"]
+    resources = [
+      "clusterrolebindings",
+      "clusterroles",
+      "rolebindings",
+      "roles",
+    ]
+    verbs = ["list", "watch"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "kube_state_metrics" {
+    count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
+    metadata {
+    name = "kube-state-metrics"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind     = "ClusterRole"
+    name     = kubernetes_cluster_role.kube_state_metrics[0].metadata[0].name
+  }
+
+  subject {
+    kind = "ServiceAccount"
+    name = kubernetes_service_account.kube_state_metrics[0].metadata[0].name
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+  }
+}
+
+
+resource "kubernetes_deployment" "kube_state_metrics" {
+    count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
+  metadata {
+    name = "kube-state-metrics"
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+    labels = {
+      "app.kubernetes.io/component" = "exporter",
+      "app.kubernetes.io/name" = "kube-state-metrics",
+      "app.kubernetes.io/version" = "2.10.0",
+      "prometheus.io/cluster" = "true"
+    }
+  }
+  spec {
+    selector {
+      match_labels = {
+        "app.kubernetes.io/name" = "kube-state-metrics"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          "app.kubernetes.io/component" = "exporter",
+          "app.kubernetes.io/name" = "kube-state-metrics",
+          "app.kubernetes.io/version" = "2.10.0",
+          "prometheus.io/cluster" = "true"
+        }
+      }
+      spec {
+        node_selector = {
+          "kubernetes.io/os" = "linux"
+
+        }
+        service_account_name = kubernetes_service_account.kube_state_metrics[0].metadata[0].name
+        container {
+          image = "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.0"
+          liveness_probe {
+            http_get {
+              path = "/healthz"
+              port = 8080
+            }
+            initial_delay_seconds = 5
+            timeout_seconds = 5
+          }
+          name = "kube-state-metrics"
+          port {
+            container_port = 8080
+            name = "http-metrics"
+          }
+
+          port {
+            container_port = 8081
+            name = "telemetry"
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/"
+              port = 8081
+            }
+            initial_delay_seconds = 5
+            timeout_seconds = 5
+          }
+
+          security_context {
+            allow_privilege_escalation = false
+            capabilities {
+              drop = ["all"]
+            }
+            read_only_root_filesystem = true
+            run_as_non_root = true
+            run_as_user = 65534
+          }
+        }
+      }
+    }
+    
+  } 
+}
+
+resource "kubernetes_service" "kube_state_metrics" {
+    count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
+    metadata {
+      name = "kube-state-metrics"
+      namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+      labels = {
+        "app.kubernetes.io/component" = "exporter",
+        "app.kubernetes.io/name" = "kube-state-metrics",
+        "app.kubernetes.io/version" = "2.10.0",
+      }
+    }
+
+    spec {
+      cluster_ip = "None"
+      port {
+        name = "http-metrics"
+        port = 8080
+        target_port = 8080
+      }
+
+      port {
+        name = "telemetry"
+        port = 8081
+        target_port = 8081
+      }
+  selector = {
+    "app.kubernetes.io/name" = "kube-state-metrics"
+  }   
+}
+}
+
+// Could be enhanced by using the the kublet's built in cadvisor
+resource "kubernetes_service_account" "cadvisor" {
+    count = var.enable_monitoring && var.enable_cadvisor_metrics ? 1 : 0
+    metadata {
+      name = "cadvisor"
+      namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+    }
+}
+
+resource "kubernetes_cluster_role" "cadvisor" {
+    count = var.enable_monitoring && var.enable_cadvisor_metrics ? 1 : 0
+  metadata {
+    name = "cadvisor"
+  }
+
+  rule {
+    api_groups = ["policy"]
+    resources  = ["podsecuritypolicies"]
+    verbs = ["use"]
+    resource_names = ["cadvisor"]
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "cadvisor" {
+  count = var.enable_monitoring && var.enable_cadvisor_metrics ? 1 : 0
+  metadata {
+    name = "cadvisor"
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind     = "ClusterRole"
+    name     = kubernetes_cluster_role.cadvisor[0].metadata[0].name
+  }
+
+  subject {
+    kind = "ServiceAccount"
+    name = kubernetes_service_account.cadvisor[0].metadata[0].name
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+  }
+}
+resource "kubernetes_daemonset" "cadvisor" {
+    count = var.enable_monitoring && var.enable_cadvisor_metrics ? 1 : 0
+  metadata {
+    name      = "cadvisor"
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+  }
+
+  spec {
+    selector {
+      match_labels = {
+        name = "cadvisor"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          name = "cadvisor"
+          "prometheus.io/cadvisor" = "true"
+        }
+      }
+
+      spec {
+        service_account_name = kubernetes_service_account.cadvisor[0].metadata[0].name
+
+        container {
+          name  = "cadvisor"
+          image = "gcr.io/cadvisor/cadvisor:latest"
+
+          volume_mount {
+            name      = "rootfs"
+            mount_path = "/rootfs"
+            read_only  = true
+          }
+
+          volume_mount {
+            name      = "var-run"
+            mount_path = "/var/run"
+            read_only  = true
+          }
+
+          volume_mount {
+            name      = "sys"
+            mount_path = "/sys"
+            read_only  = true
+          }
+
+          volume_mount {
+            name      = "docker"
+            mount_path = "/var/lib/docker"
+            read_only  = true
+          }
+
+          volume_mount {
+            name      = "disk"
+            mount_path = "/dev/disk"
+            read_only  = true
+          }
+
+          port {
+            name          = "http"
+            container_port = 8080
+            protocol      = "TCP"
+          }
+
+        }
+
+        automount_service_account_token = false
+        termination_grace_period_seconds = 30
+
+        volume {
+          name = "rootfs"
+
+          host_path {
+            path = "/"
+          }
+        }
+
+        volume {
+          name = "var-run"
+
+          host_path {
+            path = "/var/run"
+          }
+        }
+
+        volume {
+          name = "sys"
+
+          host_path {
+            path = "/sys"
+          }
+        }
+
+        volume {
+          name = "docker"
+
+          host_path {
+            path = "/var/lib/docker"
+          }
+        }
+
+        volume {
+          name = "disk"
+
+          host_path {
+            path = "/dev/disk"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+resource "kubernetes_service" "cadvisor" {
+    count = var.enable_monitoring && var.enable_cadvisor_metrics ? 1 : 0
+  metadata {
+    name = "cadvisor"
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
+  }
+
+  spec {
+    selector = {
+      name = "cadvisor"
+    }
+
+    port {
+      name = "http"
+      port = 8080
+      target_port = 8080
     }
   }
 }
