@@ -188,11 +188,11 @@ resource "kubernetes_service" "prometheus" {
 
 resource "kubernetes_ingress_v1" "prometheus" {
   metadata {
-    name = "prometheus-ingress"
+    name = "prometheus"
     labels = {
-      app = "prometheus-ingress"
+      app = "prometheus"
     }
-    namespace = "monitoring"
+
 
     annotations = {
       "alb.ingress.kubernetes.io/scheme" = "internet-facing"
@@ -211,9 +211,9 @@ resource "kubernetes_ingress_v1" "prometheus" {
           path = "/*"
           backend {
             service {
-              name = "prometheus-lb"
+              name = kubernetes_service.prometheus.metadata[0].name
               port {
-                number = 9090
+                number = kubernetes_service.prometheus.spec[0].port[0].port
               }
             }
           }
