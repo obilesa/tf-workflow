@@ -165,62 +165,7 @@ resource "kubernetes_deployment" "prometheus" {
 }
 
 
-resource "kubernetes_service" "prometheus" {
-    metadata {
-        name = "prometheus-lb"
-        namespace = "monitoring"
-    }
-    
-    spec {
-        selector = {
-        app = kubernetes_deployment.prometheus.spec[0].template[0].metadata[0].labels.app
-        }
-    
-        port {
-        port        = 9090
-        target_port = 9090
-        }
-    
-        type = "NodePort"
-    }
-}
 
 
-resource "kubernetes_ingress_v1" "prometheus" {
-  metadata {
-    name = "prometheus"
-    labels = {
-      app = "prometheus"
-    }
-    namespace = kubernetes_namespace.prometheus.metadata[0].name
-
-    annotations = {
-      "alb.ingress.kubernetes.io/scheme" = "internet-facing"
-      "alb.ingress.kubernetes.io/group.name" = "outbound"
-      "alb.ingress.kubernetes.io/group.order" = "1"
-      "alb.ingress.kubernetes.io/listen-ports" = "[{\"HTTP\": 9090}]"
-    }
-  }
-
-  spec {
-    ingress_class_name = "alb"
-
-    rule {
-      http {
-        path {
-          path = "/*"
-          backend {
-            service {
-              name = kubernetes_service.prometheus.metadata[0].name
-              port {
-                number = kubernetes_service.prometheus.spec[0].port[0].port
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
 
 
