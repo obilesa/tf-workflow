@@ -31,8 +31,10 @@ module "eks" {
 
   enable_irsa = true
 
-  manage_aws_auth_configmap = true
-  aws_auth_roles = var.enable_karpenter ? [
+
+
+
+  aws_auth_roles =  [
     # We need to add in the Karpenter node IAM role for nodes launched by Karpenter
     {
       rolearn  = module.karpenter[0].role_arn
@@ -41,8 +43,8 @@ module "eks" {
         "system:bootstrappers",
         "system:nodes",
       ]
-    },
-  ] : []
+    }
+  ] 
   
   tags = {
     "karpenter.sh/discovery" = var.cluster_name

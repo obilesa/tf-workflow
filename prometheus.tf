@@ -489,6 +489,7 @@ resource "kubernetes_deployment" "kube_state_metrics" {
     count = var.enable_monitoring && var.enable_kube_state_metrics ? 1 : 0
   metadata {
     name = "kube-state-metrics"
+    namespace = kubernetes_namespace.prometheus[0].metadata[0].name
     labels = {
       "app.kubernetes.io/component" = "exporter",
       "app.kubernetes.io/name" = "kube-state-metrics",
@@ -525,16 +526,6 @@ resource "kubernetes_deployment" "kube_state_metrics" {
           port {
             container_port = 8081
             name = "telemetry"
-          }
-
-          security_context {
-            allow_privilege_escalation = false
-            capabilities {
-              drop = ["all"]
-            }
-            read_only_root_filesystem = true
-            run_as_non_root = true
-            run_as_user = 65534
           }
         }
       }
