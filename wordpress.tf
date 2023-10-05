@@ -1,4 +1,4 @@
-/*
+
 resource "kubernetes_deployment" "wordpress" {
 
 
@@ -119,4 +119,3 @@ resource "kubernetes_ingress_v1" "wordpress" {
   }
 }
 
-*/
